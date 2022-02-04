@@ -30,24 +30,58 @@ namespace WishList.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        public IActionResult Register(RegisterViewModel registerViewModel)
+        public IActionResult Register(RegisterViewModel model)
         {
-            if (!ModelState.IsValid) return View(registerViewModel);
+            if (!ModelState.IsValid) return View(model);
             var user = new ApplicationUser()
             {
-                UserName = registerViewModel.Email,
-                Email = registerViewModel.Email,
+                UserName = model.Email,
+                Email = model.Email,
             };
-            var reg =  _userManager.CreateAsync(user, registerViewModel.Password).Result;
-            if (!reg.Succeeded)
+            var result =  _userManager.CreateAsync(user, model.Password).Result;
+            if (!result.Succeeded)
             {
-                foreach (var error in reg.Errors)
+                foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError("Password", error.Description);
                 }
-                return View(registerViewModel);
+                return View(model);
             }
             return RedirectToAction("Index","Home");
         }
+
+
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public IActionResult Login(LoginViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+            var result = _signInManager.PasswordSignInAsync(model.Email, model.Password, false, false).Result;
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                return View(model);               
+            }
+            return RedirectToAction("Index", "Item");
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Logout()
+        {
+            _signInManager.SignOutAsync();
+            return RedirectToAction("Index", "Home");
+        }
+
     }
 }
